@@ -129,6 +129,7 @@ The cluster-ingress-operator will make the following changes:
     sail-operator project to install istiod programmatically with
     gateway-api configurations.
 
+// TODO(by rikatz): just as a followup: let's make it explicit that it will delete the Istio CR owned by CIO and present on openshift-ingress namespace, so there is no fear we will be deleting random Istio CRs
 2.  **Upgrade Migration**: Detect when upgrading from an OLM-based
     installation (4.21) to Helm-based (4.22), delete the `Istio` CR in order to
     remove the control-plane (istiod) while leaving the data plane (Envoy)
@@ -266,6 +267,10 @@ The process works as follows:
 2. Use sail-operator library functions to install istiod, which access the
    embedded charts from the vendored library.
 3. No external chart files are needed at runtime.
+
+//TODO (by Aslak and Candace) - address what happens when the Helm chart changes
+// Sail Library handles that currently by having a reconciler that should be started
+
 
 This approach ensures charts are version controlled and synchronized via Go
 vendoring, eliminating drift between the Helm charts and the Istio version they
@@ -519,6 +524,16 @@ solution without requiring upstream changes.
    - `DestinationRule`: Required by RHCL/Kuadrant versions not yet supporting
      `BackendTLSPolicy`
 
+  /* TODO (by Ben Bennett) - We should cover 
+  We should cover the following case for CRD management, that should be part of the proposal:
+  * If no CRDs exist: The cluster-ingress-operator creates them when a
+  GatewayClass is created. CIO owns upgrades.
+  * If OLM subscription is created afterwards: OLM takes ownership of the
+  CRDs that the cluster-ingress-operator created. The cluster-ingress-operator
+  yields control and no longer manages them. OLM owns upgrades.
+  * If all OLM subscriptions are removed: The cluster-ingress-operator owns them. More below.
+  Open Question: How do you handle fields that are extra but withouit a default.
+  */
    The proposed ownership model would be:
    - **If no CRDs exist**: The cluster-ingress-operator creates them when a
      `GatewayClass` is created.
